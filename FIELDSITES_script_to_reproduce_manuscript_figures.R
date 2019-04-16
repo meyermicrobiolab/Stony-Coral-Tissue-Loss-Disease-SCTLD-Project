@@ -465,15 +465,126 @@ dim(sigtab)
 sig = as(sigtab, "matrix")
 write.table(sig,"DESeq2_results_Dsto_notnear.txt",sep="\t",col.names=NA)
 
+######## COMPARE 3 SPECIES (bring them together so that same colors are used for all 3 plots)
+dlab<-read.table("DESeq2_results_Dlab_notnear.txt",sep="\t",header=TRUE, row.names=1)
+dlab$host<-"dlab"
+mcav<-read.table("DESeq2_results_Mcav_notnear.txt",sep="\t",header=TRUE, row.names=1)
+mcav$host<-"mcav"
+dsto<-read.table("DESeq2_results_Dsto_notnear.txt",sep="\t",header=TRUE, row.names=1)
+dsto$host<-"dsto"
+dm<-rbind(dlab,mcav)
+dmd<-rbind(dm,dsto)
+write.table(dmd,"DESeq2_compare3_notnear.txt", sep="\t",col.names=NA)
+shared<-read.table("DESeq2_compare3_notnear.txt",sep="\t",header=TRUE)
+# pull the species back apart for plotting of shared DE taxa
+mcav<-shared[grepl("mcav", shared$host),]
+dlab<-shared[grepl("dlab", shared$host),]
+dsto<-shared[grepl("dsto", shared$host),]
+phyla<-unique(shared$Phylum)
+print(phyla)
+# total of 24 phyla in shared dataset; print out palette of 24 colors, then assign colors to alphabetically ordered phyla
+n <- 24
+palette <- distinctColorPalette(n)
+print(palette)
+cols <- c("Acidobacteria"="#5CE1CF","Actinobacteria"="#DDE594","Bacteria"="#EC8342","Bacteroidetes"="#868296","Chloroflexi"="#E0DACD",
+          "Cyanobacteria"="#DE418D","Deferribacteres"="#76DF8E","Epsilonbacteraeota"="#D18278","Euryarchaeota"="#CD67D9",
+          "Fibrobacteres"="#813BE7","Firmicutes"="#E7B3C9","Fusobacteria"="#6DC3DB","Halanaerobiaeota"="#6B9FE0",
+          "Kiritimatiellaeota"="#E240E9","LCP-89"="#BAECC0","Lentisphaerae"="#DAB279","Marinimicrobia_(SAR406_clade)"="#C496E3",
+          "Nanoarchaeaeota"="#758F61","Patescibacteria"="#7567D0","Planctomycetes"="#B2E4E0","Proteobacteria"="#000066",
+          "Spirochaetes"="#E0D94E","Thaumarchaeota"="#82E451","Verrucomicrobia"="#C9C5E4")
 
+pdf("FigureS4_DEtaxa_Mcav.pdf",width=8.5,height=11)
+p1 <- ggplot(mcav,aes(log2FoldChange,Genus,color=Phylum))+
+  geom_point(size=3)+
+  geom_errorbarh(aes(xmin=log2FoldChange-lfcSE, xmax=log2FoldChange+lfcSE),height=0.2)+
+  scale_color_manual(values=cols)+
+  ggtitle("Montastraea cavernosa")+
+  theme(plot.title = element_text(face="italic"))+
+  theme(axis.title.y=element_blank())+
+  theme(axis.title=element_text(size=12))+
+  theme(legend.text=element_text(size=12))+
+  theme(legend.title=element_text(size=12))+
+  theme(axis.text=element_text(size=12))+
+  theme(legend.position = "right")
+p1
+dev.off()
 
+pdf("FigureS5_DEtaxa_Dlab.pdf",width=8.5,height=11)
+p2 <- ggplot(dlab,aes(log2FoldChange,Genus,color=Phylum))+
+  geom_point(size=3)+
+  geom_errorbarh(aes(xmin=log2FoldChange-lfcSE, xmax=log2FoldChange+lfcSE),height=0.2)+
+  scale_color_manual(values=cols)+
+  ggtitle("Diploria labyrinthiformis")+
+  theme(plot.title = element_text(face="italic"))+
+  theme(axis.title.y=element_blank())+
+  theme(axis.title=element_text(size=12))+
+  theme(legend.text=element_text(size=12))+
+  theme(legend.title=element_text(size=12))+
+  theme(axis.text=element_text(size=12))+
+  theme(legend.position = "right")
+p2
+dev.off()
 
-##### [ add here Figures S4, S5, S6 with DE results by coral ]
+pdf("FigureS6_DEtaxa_Dsto.pdf",width=8.5,height=15)
+p3 <- ggplot(dsto,aes(log2FoldChange,Genus,color=Phylum))+
+  geom_point(size=3)+
+  geom_errorbarh(aes(xmin=log2FoldChange-lfcSE, xmax=log2FoldChange+lfcSE),height=0.2)+
+  scale_color_manual(values=cols)+
+  ggtitle("Dichocoenia stokesii")+
+  theme(plot.title = element_text(face="italic"))+
+  theme(axis.title.y=element_blank())+
+  theme(axis.title=element_text(size=12))+
+  theme(legend.text=element_text(size=12))+
+  theme(legend.title=element_text(size=12))+
+  theme(axis.text=element_text(size=12))+
+  theme(legend.position = "right")
+p3
+dev.off()
 
+############## Figure 5 RELATIVE ABUNDANCE OF 3 DIFFERENTIALLY ABUNDANT ASVs 
+asv<-read.table("3asv.txt",sep="\t",header=TRUE)
+asv$Coral<-factor(asv$Coral, levels=c("Mcav","Ofav","Dlab","Dsto"))
+# pull the ASVs apart for plotting
+asv1<-asv[grepl("Planktotalea", asv$ASV),]
+asv2<-asv[grepl("Algicola", asv$ASV),]
+asv3<-asv[grepl("Vibrio", asv$ASV),]
 
-##### [ add here Figure 5 relative abundance of shared DE ASVs ]
+p1<-ggplot(asv1, aes(x=Source,y=Relative.Abundance))+
+  geom_boxplot()+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  theme(axis.title.x=element_blank())+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(size=14))+
+  facet_grid(.~Coral)+
+  ylab("Relative Abundance")+
+  ggtitle("Planktotalea")+
+  theme(plot.title = element_text(face="bold.italic"))
 
+p2<-ggplot(asv2, aes(x=Source,y=Relative.Abundance))+
+  geom_boxplot()+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  theme(axis.title.x=element_blank())+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(size=14))+
+  facet_grid(.~Coral)+
+  ylab("Relative Abundance")+
+  ggtitle("Algicola")+
+  theme(plot.title = element_text(face="bold.italic"))
+  
+p3<-ggplot(asv3, aes(x=Source,y=Relative.Abundance))+
+  geom_boxplot()+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  theme(axis.title.x=element_blank())+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(size=14))+
+  facet_grid(.~Coral)+
+  ylab("Relative Abundance")+
+  ggtitle("Vibrio")+
+  theme(plot.title = element_text(face="bold.italic"))
 
+pdf("Figure5_RelAbund_3ASVs.pdf",width=8.5,height=11)
+plot_grid(p1,p2,p3, labels=c("A","B","C"), ncol=1, nrow=3)
+dev.off()
 
 
 ###### Figures S1, S2, S3 - Bar charts with one coral species at a time, finer resolution than Class
