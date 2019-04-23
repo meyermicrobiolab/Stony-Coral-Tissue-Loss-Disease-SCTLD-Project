@@ -15,6 +15,7 @@ library(cowplot)
 library(randomcoloR)
 library(DESeq2)
 library(dplyr)
+library(reshape2)
 writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
 
 ###### Quality-filter reads and create Amplicon Sequence Variant tables
@@ -134,6 +135,8 @@ ps <- phyloseq(otu_table(otu, taxa_are_rows=FALSE),
                tax_table(taxon))
 ps <- prune_samples(sample_names(ps), ps)
 ps
+#12300 taxa and 65 samples
+
 # remove chloroplasts and mitochondria and Eukaryota
 get_taxa_unique(ps, "Family") #597
 get_taxa_unique(ps, "Order") #339
@@ -146,6 +149,8 @@ get_taxa_unique(ps2, "Family") #593
 get_taxa_unique(ps2, "Order") #336
 get_taxa_unique(ps2, "Kingdom") #2
 ps2
+#11332 taxa and 65 samples
+
 # filtered taxa with phyloseq, now export cleaned otu and taxa tables from phyloseq
 otu = as(otu_table(ps2), "matrix")
 taxon = as(tax_table(ps2), "matrix")
@@ -158,32 +163,29 @@ otu <- read.table("Fieldsites_silva_nochloronomito_otu_table.txt",sep="\t",heade
 taxon <- read.table("Fieldsites_silva_nochloronomito_taxa_table.txt",sep="\t",header=TRUE,row.names=1)
 samples<-read.table("Fieldsites_metadata.txt",sep="\t",header=T,row.names=1)
 OTU = otu_table(otu, taxa_are_rows=FALSE)
-class(OTU)
-taxa_names(OTU)
-class(taxmat)
 taxon<-as.matrix(taxon)
 TAX = tax_table(taxon)
-taxa_names(TAX)
 sampledata = sample_data(samples)
 ps <- phyloseq(otu_table(otu, taxa_are_rows=FALSE), 
                sample_data(samples), 
                tax_table(taxon))
-ps <- prune_samples(sample_names(ps), ps)
+ps
+#11332 taxa and 65 samples
+get_taxa_unique(ps, "Family") #593
+get_taxa_unique(ps, "Order") #336
+get_taxa_unique(ps, "Kingdom") #2
+
+# remove control samples for plotting, remaining samples = 62
+ps = subset_samples(ps, Coral != "control")
 ps
 
 # look at data and chose filtering method for very low abundance ASVs
 ntaxa(ps) #11332
-ps10<-filter_taxa(ps, function(x) mean(x) >10, TRUE)
-ntaxa(ps10) #414
 ps5<-filter_taxa(ps, function(x) mean(x) >5, TRUE)
-ntaxa(ps5) #683
+ntaxa(ps5) #693
 get_taxa_unique(ps, "Genus") # 1254
-get_taxa_unique(ps5, "Genus") #285
-get_taxa_unique(ps10, "Genus") #199
+get_taxa_unique(ps5, "Genus") #279
 
-# remove control samples for plotting, remaining samples = 62
-ps5 = subset_samples(ps5, Coral != "control")
-ps5
 
 # filtered ASVs with very low abundance with phyloseq, now export otu and taxa tables from phyloseq for codaseq
 otu = as(otu_table(ps5), "matrix")
@@ -194,7 +196,7 @@ write.table(taxon,"Fieldsites_ps5_silva_nochloronomito_taxa_table.txt",sep="\t",
 write.table(metadata,"Fieldsites_ps5_silva_metadata.txt",sep="\t",col.names=NA)
 
 ######### Perform center-log-ratio transformation on ASVs and calculate Aitchison Distance and principal components
-# READ IN OTU data that has been filtered for very low abundance sequences
+# READ IN OTU data that has been filtered for very low abundance sequences; do not clear data here. Keep phyloseq object ps5 for anosim/permanova
 otu <- read.table("Fieldsites_ps5_silva_nochloronomito_otu_table.txt",sep="\t",header=TRUE, row.names=1)
 taxon <- read.table("Fieldsites_ps5_silva_nochloronomito_taxa_table.txt",sep="\t",header=TRUE,row.names=1)
 samples<-read.table("Fieldsites_ps5_silva_metadata.txt",sep="\t",header=T,row.names=1)
@@ -264,7 +266,8 @@ print(perm)
 perm<-adonis(dist.clr~conds*coral,as(sample_data(ps5),"data.frame"))
 print(perm)
 
-########## Figure 3 - bar charts using ps5 with 62 samples (683 taxa)
+########## Figure 3 - bar charts using ps5 (low abundance filtered) with 62 samples (693 taxa)
+ps5
 ps_ra<-transform_sample_counts(ps5, function(OTU) OTU/sum(OTU))
 ps_ra_mcav = subset_samples(ps_ra, Coral == "Montastraea cavernosa")
 ps_ra_ofav = subset_samples(ps_ra, Coral == "Orbicella faveolata")
@@ -381,7 +384,7 @@ dev.off()
 ############ DESeq2 analysis
 # check to see that you are using the full dataset (ps), not the low abundance ASV filtered dataset (ps5)
 ps
-# you should have 11332 taxa and 65 samples
+# you should have 11332 taxa and 62 samples
 
 ############ DESeq2 analysis for Mcav, using lesion versus far from lesion samples
 ps.mcav = subset_samples(ps, Coral=="Montastraea cavernosa")
@@ -588,13 +591,13 @@ dev.off()
 
 
 ###### Figures S1, S2, S3 - Bar charts with one coral species at a time, finer resolution than Class
-get_taxa_unique(ps_ra_mcav, "Genus") #285
+get_taxa_unique(ps_ra_mcav, "Genus") #279
 # get rid of ASVs with no counts in mcav
 ps_ra_mcav <- prune_taxa(taxa_sums(ps_ra_mcav) != 0, ps_ra_mcav)
-get_taxa_unique(ps_ra_mcav, "Genus") #252
-get_taxa_unique(ps_ra_mcav, "Family") #153
+get_taxa_unique(ps_ra_mcav, "Genus") #253
+get_taxa_unique(ps_ra_mcav, "Family") #155
 
-n <- 153
+n <- 155
 palette <- distinctColorPalette(n)
 sample_data(ps_ra_mcav)$Near_Far<-factor(sample_data(ps_ra_mcav)$Near_Far,levels=c("undiseased","far","near","lesion"))
 pdf("FigureS1_Mcav_Families.pdf",width=16, height=10)
@@ -609,7 +612,7 @@ p1=plot_bar(ps_ra_mcav, fill="Family")+
 p1
 dev.off()
 
-get_taxa_unique(ps_ra_dlab, "Genus") #285
+get_taxa_unique(ps_ra_dlab, "Genus") #279
 # get rid of ASVs with no counts in dlab
 ps_ra_dlab <- prune_taxa(taxa_sums(ps_ra_dlab) != 0, ps_ra_dlab)
 get_taxa_unique(ps_ra_dlab, "Genus") #216
@@ -629,12 +632,12 @@ p3=plot_bar(ps_ra_dlab, fill="Family")+
 p3
 dev.off()
 
-get_taxa_unique(ps_ra_dsto, "Genus") #285
+get_taxa_unique(ps_ra_dsto, "Genus") #279
 # get rid of ASVs with no counts in dsto
 ps_ra_dsto <- prune_taxa(taxa_sums(ps_ra_dsto) != 0, ps_ra_dsto)
-get_taxa_unique(ps_ra_dsto, "Genus") #223
-get_taxa_unique(ps_ra_dsto, "Family") #137
-n <- 137
+get_taxa_unique(ps_ra_dsto, "Genus") #224
+get_taxa_unique(ps_ra_dsto, "Family") #139
+n <- 139
 palette <- distinctColorPalette(n)
 sample_data(ps_ra_dsto)$Near_Far<-factor(sample_data(ps_ra_dsto)$Near_Far,levels=c("undis.","far","near","lesion"))
 pdf("FigureS3_Dsto_Families.pdf",width=16, height=10)
