@@ -1,4 +1,4 @@
-# Stony-Coral-Tissue-Loss-Disease-SCTLD-Project
+# Stony-coral-tissue-loss-disease-SCTLD-Project
 
 ### Requirements
   The packages used and their versions are listed in the sessionInfo.txt file. Some of the key libraries used in analysis are:
