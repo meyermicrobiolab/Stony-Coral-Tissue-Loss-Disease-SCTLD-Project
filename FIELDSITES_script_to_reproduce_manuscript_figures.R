@@ -16,6 +16,7 @@ library(randomcoloR)
 library(DESeq2)
 library(dplyr)
 library(reshape2)
+library(tibble)
 writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
 
 ###### Quality-filter reads and create Amplicon Sequence Variant tables
@@ -178,6 +179,9 @@ get_taxa_unique(ps, "Kingdom") #2
 # remove control samples for plotting, remaining samples = 62
 ps = subset_samples(ps, Coral != "control")
 ps
+
+# plot number of observed ASVs in coral samples
+plot_richness(ps,x="Condition",color="Coral",measures=c("Observed"))
 
 # look at data and chose filtering method for very low abundance ASVs
 ntaxa(ps) #11332
