@@ -544,52 +544,107 @@ p3 <- ggplot(dsto,aes(log2FoldChange,Genus,color=Phylum))+
 p3
 dev.off()
 
-############## Figure 5 RELATIVE ABUNDANCE OF 3 DIFFERENTIALLY ABUNDANT ASVs 
-asv<-read.table("3asv.txt",sep="\t",header=TRUE)
-asv$Coral<-factor(asv$Coral, levels=c("Mcav","Ofav","Dlab","Dsto"))
-# pull the ASVs apart for plotting
-asv1<-asv[grepl("Planktotalea", asv$ASV),]
-asv2<-asv[grepl("Algicola", asv$ASV),]
-asv3<-asv[grepl("Vibrio", asv$ASV),]
+############## Figure 5 RELATIVE ABUNDANCE OF DIFFERENTIALLY ABUNDANT ASVs 
+otu <- read.table("Fieldsites_ps5_silva_nochloronomito_otu_table.txt",sep="\t",header=TRUE, row.names=1)
+taxon <- read.table("Fieldsites_ps5_silva_nochloronomito_taxa_table.txt",sep="\t",header=TRUE,row.names=1)
+samples<-read.table("Fieldsites_ps5_silva_metadata.txt",sep="\t",header=T,row.names=1)
+OTU = otu_table(otu, taxa_are_rows=FALSE)
+taxon<-as.matrix(taxon)
+TAX = tax_table(taxon)
+sampledata = sample_data(samples)
+ps5 <- phyloseq(otu_table(otu, taxa_are_rows=FALSE), 
+               sample_data(samples), 
+               tax_table(taxon))
+ps5
+ps_ra<-transform_sample_counts(ps5, function(OTU) OTU/sum(OTU))
+ps_ra
+ps5.subset <- subset_taxa(ps_ra, rownames(tax_table(ps_ra)) %in% c("TACGGAGGGTCCAAGCGTTATCCGGATTTATTGGGTTTAAAGGGTCCGTAGGCGGGGTTTTAAGTCAGTGGTGAAAGCCTACAGCTCAACTGTAGAACTGCCATTGAAACTGGAACTCTTGAATGTGATTGAGGTAGGCGGAATATGTCATGTAGCGGTGAAATGCTTAGATATGACATAGAACACCGATAGCGAAGGCAGCTTACCAAGTCATTATTGACGCTGATGGACGAAAGCGTGGGGAGCGAACAGG", "TACGTAGGGGGCAAGCGTTATCCGGAATCACTGGGCGTAAAGGGTGCGTAGGCGGTTTTTCAAGTCAGAAGTGAAAGGCTATGGCTCAACCATAGTAAGCTTTTGAAACTGTTAAACTTGAGTGCAGGAGAGGAAAGTGGAATTCCTAGTGTAGAGGTGAAATTCGTAGATATTAGGAGGAACACCAGTGGCGAAGGCGACTTTCTGGACTGTAACTGACGCTGAGGCACGAAAGCGTGGGGAGCGAACAGG","TACGGAGGGGGTTAGCGTTGTTCGGAATTACTGGGCGTAAAGCGCACGTAGGCGGATTAGTCAGTCAGAGGTGAAATCCCAGGGCTCAACCCTGGAACTGCCTTTGATACTGCTAGTCTTGAGTTCGAGAGAGGTGAGTGGAATTCCGAGTGTAGAGGTGAAATTCGTAGATATTCGGAGGAACACCAGTGGCGAAGGCGGCTCACTGGCTCGATACTGACGCTGAGGTGCGAAAGTGTGGGGAGCAAACAGG","TACGGAGGGTGCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGTACGCAGGCGGTTAGTTAAGTCAGATGTGAAAGCCCCGGGCTCAACCTGGGAACTGCATTTGAAACTGGCTAACTAGAGTGCGACAGAGGGTGGTAGAATTTCAGGTGTAGCGGTGAAATGCGTAGAGATCTGAAGGAATACCGATGGCGAAGGCAGCCACCTGGGTCGACACTGACGCTCATGTACGAAAGCGTGGGTAGCAAACAGG","TACGGAGGGTGCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGCATGCAGGTGGTTTGTTAAGTCAGATGTGAAAGCCCTGGGCTCAACCCGGGAAGGTCATTTGAAACTGGCAAGCTAGAGTACTGTAGAGGGGGGTAGAATTTCAGGTGTAGCGGTGAAATGCGTAGAGATCTGAAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACAGATACTGACACTCAGATGCGAAAGCGTGGGGAGCAAACAGG"))
+ps5.subset
+otu = as(otu_table(ps5.subset), "matrix")
+taxon = as(tax_table(ps5.subset), "matrix")
+metadata = as(sample_data(ps5.subset), "matrix")
+colnames(otu)[colnames(otu)=="TACGGAGGGTGCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGCATGCAGGTGGTTTGTTAAGTCAGATGTGAAAGCCCTGGGCTCAACCCGGGAAGGTCATTTGAAACTGGCAAGCTAGAGTACTGTAGAGGGGGGTAGAATTTCAGGTGTAGCGGTGAAATGCGTAGAGATCTGAAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACAGATACTGACACTCAGATGCGAAAGCGTGGGGAGCAAACAGG"] <- "Cryomorphaceae"
+colnames(otu)[colnames(otu)=="TACGTAGGGGGCAAGCGTTATCCGGAATCACTGGGCGTAAAGGGTGCGTAGGCGGTTTTTCAAGTCAGAAGTGAAAGGCTATGGCTCAACCATAGTAAGCTTTTGAAACTGTTAAACTTGAGTGCAGGAGAGGAAAGTGGAATTCCTAGTGTAGAGGTGAAATTCGTAGATATTAGGAGGAACACCAGTGGCGAAGGCGACTTTCTGGACTGTAACTGACGCTGAGGCACGAAAGCGTGGGGAGCGAACAGG"] <- "Fusibacter"
+colnames(otu)[colnames(otu)=="TACGGAGGGTCCAAGCGTTATCCGGATTTATTGGGTTTAAAGGGTCCGTAGGCGGGGTTTTAAGTCAGTGGTGAAAGCCTACAGCTCAACTGTAGAACTGCCATTGAAACTGGAACTCTTGAATGTGATTGAGGTAGGCGGAATATGTCATGTAGCGGTGAAATGCTTAGATATGACATAGAACACCGATAGCGAAGGCAGCTTACCAAGTCATTATTGACGCTGATGGACGAAAGCGTGGGGAGCGAACAGG"] <- "Planktotalea"
+colnames(otu)[colnames(otu)=="TACGGAGGGTGCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGTACGCAGGCGGTTAGTTAAGTCAGATGTGAAAGCCCCGGGCTCAACCTGGGAACTGCATTTGAAACTGGCTAACTAGAGTGCGACAGAGGGTGGTAGAATTTCAGGTGTAGCGGTGAAATGCGTAGAGATCTGAAGGAATACCGATGGCGAAGGCAGCCACCTGGGTCGACACTGACGCTCATGTACGAAAGCGTGGGTAGCAAACAGG"] <- "Algicola"
+colnames(otu)[colnames(otu)=="TACGGAGGGGGTTAGCGTTGTTCGGAATTACTGGGCGTAAAGCGCACGTAGGCGGATTAGTCAGTCAGAGGTGAAATCCCAGGGCTCAACCCTGGAACTGCCTTTGATACTGCTAGTCTTGAGTTCGAGAGAGGTGAGTGGAATTCCGAGTGTAGAGGTGAAATTCGTAGATATTCGGAGGAACACCAGTGGCGAAGGCGGCTCACTGGCTCGATACTGACGCTGAGGTGCGAAAGTGTGGGGAGCAAACAGG"] <- "Vibrio"
+otu<-as.data.frame(otu)
+otu<-rownames_to_column(otu,var="Sample")
+metadata<-as.data.frame(metadata)
+metadata<-rownames_to_column(metadata,var="Sample")
+otu.meta<-merge(metadata,otu,"Sample")
+otu_long<-melt(otu.meta,id.vars=c("Sample","Coral","Colony","Condition","Near_Far","Source","Site"),variable.name="ASV",value.name="Proportion")
+otu_long$Coral<-factor(otu_long$Coral,levels=c("Montastraea cavernosa","Orbicella faveolata","Diploria labyrinthiformis","Dichocoenia stokesii"))
+asv1<-otu_long[grepl("Cryomorphaceae", otu_long$ASV),]
+asv2<-otu_long[grepl("Fusibacter", otu_long$ASV),]
+asv3<-otu_long[grepl("Planktotalea", otu_long$ASV),]
+asv4<-otu_long[grepl("Algicola", otu_long$ASV),]
+asv5<-otu_long[grepl("Vibrio", otu_long$ASV),]
 
-p1<-ggplot(asv1, aes(x=Source,y=Relative.Abundance))+
+p1<-ggplot(asv1, aes(x=Source,y=Proportion))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
+  theme(strip.text.x=element_text(face="italic",size=10))+
+  ylab("Relative Abundance")+
+  ggtitle("Cryomorphaceae")
+
+p2<-ggplot(asv2, aes(x=Source,y=Proportion))+
+  geom_boxplot()+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  theme(axis.title.x=element_blank())+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(size=14))+
+  facet_grid(.~Coral)+
+  theme(strip.text.x=element_text(face="italic",size=10))+
+  ylab("Relative Abundance")+
+  ggtitle("Fusibacter")+
+  theme(plot.title = element_text(face="italic"))
+
+p3<-ggplot(asv3, aes(x=Source,y=Proportion))+
+  geom_boxplot()+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  theme(axis.title.x=element_blank())+
+  theme(legend.title=element_blank())+
+  theme(text=element_text(size=14))+
+  facet_grid(.~Coral)+
+  theme(strip.text.x=element_text(face="italic",size=10))+
   ylab("Relative Abundance")+
   ggtitle("Planktotalea")+
-  theme(plot.title = element_text(face="bold.italic"))
+  theme(plot.title = element_text(face="italic"))
 
-p2<-ggplot(asv2, aes(x=Source,y=Relative.Abundance))+
+p4<-ggplot(asv4, aes(x=Source,y=Proportion))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
+  theme(strip.text.x=element_text(face="italic",size=10))+
   ylab("Relative Abundance")+
   ggtitle("Algicola")+
-  theme(plot.title = element_text(face="bold.italic"))
+  theme(plot.title = element_text(face="italic"))
   
-p3<-ggplot(asv3, aes(x=Source,y=Relative.Abundance))+
+p5<-ggplot(asv5, aes(x=Source,y=Proportion))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
+  theme(strip.text.x=element_text(face="italic",size=10))+
   ylab("Relative Abundance")+
   ggtitle("Vibrio")+
-  theme(plot.title = element_text(face="bold.italic"))
+  theme(plot.title = element_text(face="italic"))
 
-pdf("Figure5_RelAbund_3ASVs.pdf",width=8.5,height=11)
-plot_grid(p1,p2,p3, labels=c("A","B","C"), ncol=1, nrow=3)
+pdf("Figure5_RelAbund_5ASVs.pdf",width=8.5,height=11)
+plot_grid(p1,p2,p3,p4,p5, labels=c("A","B","C","D","E"), ncol=1, nrow=5)
 dev.off()
 
-
+                                    
 ###### Figures S1, S2, S3 - Bar charts with one coral species at a time, finer resolution than Class
 get_taxa_unique(ps_ra_mcav, "Genus") #279
 # get rid of ASVs with no counts in mcav
