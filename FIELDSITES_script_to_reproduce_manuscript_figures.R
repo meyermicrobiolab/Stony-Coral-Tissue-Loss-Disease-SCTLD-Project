@@ -124,17 +124,12 @@ otu <- read.table("Fieldsites_silva_otu_table.txt",sep="\t",header=TRUE, row.nam
 taxon <- read.table("Fieldsites_silva_taxa_table.txt",sep="\t",header=TRUE,row.names=1)
 samples<-read.table("Fieldsites_metadata.txt",sep="\t",header=T,row.names=1)
 OTU = otu_table(otu, taxa_are_rows=FALSE)
-class(OTU)
-taxa_names(OTU)
-class(taxmat)
 taxon<-as.matrix(taxon)
 TAX = tax_table(taxon)
-taxa_names(TAX)
 sampledata = sample_data(samples)
 ps <- phyloseq(otu_table(otu, taxa_are_rows=FALSE), 
                sample_data(samples), 
                tax_table(taxon))
-ps <- prune_samples(sample_names(ps), ps)
 ps
 #12300 taxa and 65 samples
 
