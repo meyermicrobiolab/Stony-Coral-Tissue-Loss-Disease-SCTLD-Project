@@ -27,7 +27,7 @@ writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
 path <- "~/Documents/DiseaseOutbreak/DiseaseMicrobiomeAnalysis/FIELDSITES/cutadapt_fieldsites"
 list.files(path)
 
-# Forward and reverse fastq filenames have format: SAMPLENAME_R1_cut.fastq and SAMPLENAME_R2_cut.fastq
+# Forward and reverse fastq filenames have format: SAMPLENAME_R1_cut.fastq.gz and SAMPLENAME_R2_cut.fastq.gz
 # Samplename is everything before the first underscore
 fnFs <- sort(list.files(path, pattern="_R1_cut.fastq.gz", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern="_R2_cut.fastq.gz", full.names = TRUE))
