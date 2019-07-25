@@ -174,6 +174,7 @@ get_taxa_unique(ps, "Kingdom") #2
 # remove control samples for plotting, remaining samples = 62
 ps = subset_samples(ps, Coral != "control")
 ps
+#11332 taxa and 62 samples
 
 # plot number of observed ASVs in coral samples
 plot_richness(ps,x="Condition",color="Coral",measures=c("Observed"))
@@ -359,25 +360,20 @@ summary(distlm)
 anova(distlm)
 
 # plot average dispersion by group, with all points shown
-p1<-ggplot(dis.treat, aes(x=Condition,y=distance))+
+dis.treat2<-dis.treat[!grepl("Orbicella faveolata",dis.treat$Coral),]
+dis.treat2$Coral<-factor(dis.treat2$Coral, levels=c("Montastraea cavernosa","Diploria labyrinthiformis","Dichocoenia stokesii"))
+pdf("Figure4_DistanceToCentroid.pdf",width=8.5,height=11)
+p2<-ggplot(dis.treat2,aes(x=Condition,y=distance))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Coral),size=3)+
-  scale_color_manual(values=c("#009E73","#e79f00","#56B4E9","#0072B2"))+
-  theme(axis.title.x=element_blank())+
-  theme(legend.title=element_blank())+
-  theme(legend.text=element_text(face="italic"))+
-  theme(text=element_text(size=16))+
-  ylab("Distance to Centroid")
-p2<-ggplot(dis.treat, aes(x=Coral,y=distance))+
-  geom_boxplot()+
+  facet_grid(Coral~.,space="free")+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Condition),size=3)+
   scale_color_manual(values=c("#D55E00","#999999","#000000"))+
   theme(axis.title.x=element_blank())+
-  theme(axis.text.x=element_text(face="italic"))+
+  theme(legend.position="none")+
   theme(text=element_text(size=14))+
+  theme(strip.text.y=element_text(face="italic",size=14))+
   ylab("Distance to Centroid")
-pdf("Figure4_DistanceToCentroid_2panel.pdf",width=11,height=11)
-plot_grid(p1,p2,labels=c("A","B"), ncol=1, nrow=2)
+p2
 dev.off()
 
 ############ DESeq2 analysis
