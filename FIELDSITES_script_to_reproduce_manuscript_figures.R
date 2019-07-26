@@ -909,7 +909,7 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  sig=0.05, #significance level
                                  prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
 
-res <- comparison_test_treat$W.taxa #taxa that sifnificantly vary across factor level of interest
+res <- comparison_test_treat$W.taxa #taxa that significantly vary across factor level of interest
 write.table(res,"ANCOM_family_KruskallWallis.txt",sep="\t",col.names=NA)
 res2 <- res[which(res$detected_0.7==TRUE),] 
 
@@ -926,7 +926,7 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  sig=0.05, #significance level
                                  prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
 
-res3 <- comparison_test_treat$W.taxa #taxa that sifnificantly vary across factor level of interest
+res3 <- comparison_test_treat$W.taxa #taxa that significantly vary across factor level of interest
 write.table(res3,"ANCOM_family_ANOVA.txt",sep="\t",col.names=NA)
 res4 <- res[which(res3$detected_0.7==TRUE),] 
 
