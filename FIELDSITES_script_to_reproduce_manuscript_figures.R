@@ -639,7 +639,332 @@ pdf("Figure5_RelAbund_5ASVs.pdf",width=8.5,height=11)
 plot_grid(p1,p2,p3,p4,p5, labels=c("A","B","C","D","E"), ncol=1, nrow=5)
 dev.off()
 
-                                    
+
+################################# FIGURE 6 ANCOM TEST OF DIFFERENTIALLY ABUNDANT FAMILIES
+#ANCOM Function - compare across multiple treatments groups using a compositional appproach
+#https://sites.google.com/site/siddharthamandal1985/research
+
+###Need to run this first in order to run ANCOM on data
+library(exactRankTests)
+library(nlme)
+library(ggplot2)
+
+ancom.W = function(otu_data,var_data,
+                   adjusted,repeated,
+                   main.var,adj.formula,
+                   repeat.var,long,rand.formula,
+                   multcorr,sig){
+  
+  n_otu=dim(otu_data)[2]-1
+  
+  otu_ids=colnames(otu_data)[-1]
+  
+  if(repeated==F){
+    data_comp=data.frame(merge(otu_data,var_data,by="Sample.ID",all.y=T),row.names=NULL)
+    #data_comp=data.frame(merge(otu_data,var_data[,c("Sample.ID",main.var)],by="Sample.ID",all.y=T),row.names=NULL)
+  }else if(repeated==T){
+    data_comp=data.frame(merge(otu_data,var_data,by="Sample.ID"),row.names=NULL)
+    # data_comp=data.frame(merge(otu_data,var_data[,c("Sample.ID",main.var,repeat.var)],by="Sample.ID"),row.names=NULL)
+  }
+  
+  base.formula = paste0("lr ~ ",main.var)
+  if(repeated==T){
+    repeat.formula = paste0(base.formula," | ", repeat.var)
+  }
+  if(adjusted==T){
+    adjusted.formula = paste0(base.formula," + ", adj.formula)
+  }
+  
+  if( adjusted == F & repeated == F ){
+    fformula  <- formula(base.formula)
+  } else if( adjusted == F & repeated == T & long == T ){
+    fformula  <- formula(base.formula)   
+  }else if( adjusted == F & repeated == T & long == F ){
+    fformula  <- formula(repeat.formula)   
+  }else if( adjusted == T & repeated == F  ){
+    fformula  <- formula(adjusted.formula)   
+  }else if( adjusted == T & repeated == T  ){
+    fformula  <- formula(adjusted.formula)   
+  }else{
+    stop("Problem with data. Dataset should contain OTU abundances, groups, 
+         and optionally an ID for repeated measures.")
+  }
+  
+  
+  
+  if( repeated==FALSE & adjusted == FALSE){
+    if( length(unique(data_comp[,which(colnames(data_comp)==main.var)]))==2 ){
+      tfun <- exactRankTests::wilcox.exact
+    } else{
+      tfun <- stats::kruskal.test
+    }
+  }else if( repeated==FALSE & adjusted == TRUE){
+    tfun <- stats::aov
+  }else if( repeated== TRUE & adjusted == FALSE & long == FALSE){
+    tfun <- stats::friedman.test
+  }else if( repeated== TRUE & adjusted == FALSE & long == TRUE){
+    tfun <- nlme::lme
+  }else if( repeated== TRUE & adjusted == TRUE){
+    tfun <- nlme::lme
+  }
+  
+  logratio.mat <- matrix(NA, nrow=n_otu, ncol=n_otu)
+  for(ii in 1:(n_otu-1)){
+    for(jj in (ii+1):n_otu){
+      data.pair <- data_comp[,which(colnames(data_comp)%in%otu_ids[c(ii,jj)])]
+      lr <- log((1+as.numeric(data.pair[,1]))/(1+as.numeric(data.pair[,2])))
+      
+      lr_dat <- data.frame( lr=lr, data_comp,row.names=NULL )
+      
+      if(adjusted==FALSE&repeated==FALSE){  ## Wilcox, Kruskal Wallis
+        logratio.mat[ii,jj] <- tfun( formula=fformula, data = lr_dat)$p.value
+      }else if(adjusted==FALSE&repeated==TRUE&long==FALSE){ ## Friedman's 
+        logratio.mat[ii,jj] <- tfun( formula=fformula, data = lr_dat)$p.value
+      }else if(adjusted==TRUE&repeated==FALSE){ ## ANOVA
+        model=tfun(formula=fformula, data = lr_dat,na.action=na.omit)   
+        picker=which(gsub(" ","",row.names(summary(model)[[1]]))==main.var)  
+        logratio.mat[ii,jj] <- summary(model)[[1]][["Pr(>F)"]][picker]
+      }else if(repeated==TRUE&long==TRUE){ ## GEE
+        model=tfun(fixed=fformula,data = lr_dat,
+                   random = formula(rand.formula),
+                   correlation=corAR1(),
+                   na.action=na.omit)   
+        picker=which(gsub(" ","",row.names(anova(model)))==main.var)
+        logratio.mat[ii,jj] <- anova(model)[["p-value"]][picker]
+      }
+      
+    }
+  } 
+  
+  ind <- lower.tri(logratio.mat)
+  logratio.mat[ind] <- t(logratio.mat)[ind]
+  
+  
+  logratio.mat[which(is.finite(logratio.mat)==FALSE)] <- 1
+  
+  mc.pval <- t(apply(logratio.mat,1,function(x){
+    s <- p.adjust(x, method = "BH")
+    return(s)
+  }))
+  
+  a <- logratio.mat[upper.tri(logratio.mat,diag=FALSE)==TRUE]
+  
+  b <- matrix(0,ncol=n_otu,nrow=n_otu)
+  b[upper.tri(b)==T] <- p.adjust(a, method = "BH")
+  diag(b)  <- NA
+  ind.1    <- lower.tri(b)
+  b[ind.1] <- t(b)[ind.1]
+  
+  #########################################
+  ### Code to extract surrogate p-value
+  surr.pval <- apply(mc.pval,1,function(x){
+    s0=quantile(x[which(as.numeric(as.character(x))<sig)],0.95)
+    # s0=max(x[which(as.numeric(as.character(x))<alpha)])
+    return(s0)
+  })
+  #########################################
+  ### Conservative
+  if(multcorr==1){
+    W <- apply(b,1,function(x){
+      subp <- length(which(x<sig))
+    })
+    ### Moderate
+  } else if(multcorr==2){
+    W <- apply(mc.pval,1,function(x){
+      subp <- length(which(x<sig))
+    })
+    ### No correction
+  } else if(multcorr==3){
+    W <- apply(logratio.mat,1,function(x){
+      subp <- length(which(x<sig))
+    })
+  }
+  
+  return(W)
+  }
+
+
+
+ANCOM.main = function(OTUdat,Vardat,
+                      adjusted,repeated,
+                      main.var,adj.formula,
+                      repeat.var,longitudinal,
+                      random.formula,
+                      multcorr,sig,
+                      prev.cut){
+  
+  p.zeroes=apply(OTUdat[,-1],2,function(x){
+    s=length(which(x==0))/length(x)
+  })
+  
+  zeroes.dist=data.frame(colnames(OTUdat)[-1],p.zeroes,row.names=NULL)
+  colnames(zeroes.dist)=c("Taxon","Proportion_zero")
+  
+  zero.plot = ggplot(zeroes.dist, aes(x=Proportion_zero)) + 
+    geom_histogram(binwidth=0.1,colour="black",fill="white") + 
+    xlab("Proportion of zeroes") + ylab("Number of taxa") +
+    theme_bw()
+  
+  #print(zero.plot)
+  
+  OTUdat.thinned=OTUdat
+  OTUdat.thinned=OTUdat.thinned[,c(1,1+which(p.zeroes<prev.cut))]
+  
+  otu.names=colnames(OTUdat.thinned)[-1]
+  
+  W.detected   <- ancom.W(OTUdat.thinned,Vardat,
+                          adjusted,repeated,
+                          main.var,adj.formula,
+                          repeat.var,longitudinal,random.formula,
+                          multcorr,sig)
+  
+  W_stat       <- W.detected
+  
+  
+  ### Bubble plot
+  
+  W_frame = data.frame(otu.names,W_stat,row.names=NULL)
+  W_frame = W_frame[order(-W_frame$W_stat),]
+  
+  W_frame$detected_0.9=rep(FALSE,dim(W_frame)[1])
+  W_frame$detected_0.8=rep(FALSE,dim(W_frame)[1])
+  W_frame$detected_0.7=rep(FALSE,dim(W_frame)[1])
+  W_frame$detected_0.6=rep(FALSE,dim(W_frame)[1])
+  
+  W_frame$detected_0.9[which(W_frame$W_stat>0.9*(dim(OTUdat.thinned[,-1])[2]-1))]=TRUE
+  W_frame$detected_0.8[which(W_frame$W_stat>0.8*(dim(OTUdat.thinned[,-1])[2]-1))]=TRUE
+  W_frame$detected_0.7[which(W_frame$W_stat>0.7*(dim(OTUdat.thinned[,-1])[2]-1))]=TRUE
+  W_frame$detected_0.6[which(W_frame$W_stat>0.6*(dim(OTUdat.thinned[,-1])[2]-1))]=TRUE
+  
+  final_results=list(W_frame,zero.plot)
+  names(final_results)=c("W.taxa","PLot.zeroes")
+  return(final_results)
+}
+
+
+#####ANCOM results
+otu <- read.table("Fieldsites_silva_nochloronomito_otu_table.txt",sep="\t",header=TRUE, row.names=1)
+taxon <- read.table("Fieldsites_silva_nochloronomito_taxa_table.txt",sep="\t",header=TRUE,row.names=1)
+samples<-read.table("Fieldsites_metadata.txt",sep="\t",header=T,row.names=1)
+OTU = otu_table(otu, taxa_are_rows=FALSE)
+taxon<-as.matrix(taxon)
+TAX = tax_table(taxon)
+sampledata = sample_data(samples)
+ps <- phyloseq(otu_table(otu, taxa_are_rows=FALSE), 
+               sample_data(samples), 
+               tax_table(taxon))
+ps
+#11332 taxa and 65 samples
+# remove control samples for plotting, remaining samples = 62
+ps = subset_samples(ps, Coral != "control")
+ps
+#11332 taxa and 62 samples
+get_taxa_unique(ps, "Family")
+
+library(data.table)
+#Need to run ANCOM function first
+#ANCOM
+#from phyloseq -use all of the data, not relative abundance, and  not filtered beyond mitochondria and choloroplasts 
+#Make the otutable
+#group the otus based on family
+#this is probaby a little overkill, but it's how I've done it in the past - all you need is the otutable really, so probably that could have been done in one step, but i like this for future plot-making
+dat <- tax_glom(ps, taxrank = "Family") #at the Family level
+
+#melt the data, so it's like a dataframe
+datm <- psmelt(dat)
+
+
+#Cast the new datatable with columns that are of interest
+datc <- data.table::dcast(datm, Sample + Coral + Condition ~ Family, value.var = 'Abundance', fun.aggregate = sum)
+
+
+dim(datc) #dimensions of the table
+
+otud <- datc[,c(1,4:596)] #select the first column, and then all of the taxa columns  
+colnames(otud)[1] <- "Sample.ID" #rename the first column to Sample.ID - this is to match ANCOM syntax
+
+metadat <- sample_data(ps) #get the sample data
+metadat <- as.data.frame(as.matrix(metadat)) #make into into a matrix
+# at this point, my sample id numbers are the row names, not a separate column, move row names to column with dplylr
+library(dplyr)
+library(reshape2)
+metadat <- tibble::rownames_to_column(metadat, "Sample.ID") #make sure the sample names column is called Sample.ID
+
+names(otud) <- make.names(names(otud)) #get the names from the table for 
+otu_test <- otud #rename otud to otu_test, for syntax in ANCOM
+
+metadat <- select(metadat, c("Sample.ID","Coral","Condition")) # use select to only use treatment columns of interest
+map_test <- metadat #rename map_TEst
+Vardat <- map_test #specify that this for Vardat - ANCOM syntax
+#### ANCOM test - not adjusted, more than 2 levels = Kruskal Wallis
+comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
+                                 Vardat=map_test, #calling the metadata
+                                 adjusted=FALSE, #true if covariates are to be included for adjustment
+                                 repeated=FALSE, #repeated measure
+                                 main.var="Condition", #main variable or fator
+                                 adj.formula= NULL, #other factors to include
+                                 repeat.var=FALSE, #repeated measure
+                                 long = FALSE, #longitudinal study
+                                 multcorr=2,
+                                 sig=0.05, #significance level
+                                 prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
+
+res <- comparison_test_treat$W.taxa #taxa that sifnificantly vary across factor level of interest
+write.table(res,"ANCOM_family_KruskallWallis.txt",sep="\t",col.names=NA)
+res2 <- res[which(res$detected_0.7==TRUE),] 
+
+#### ANCOM test - Adjusted by Coral species, ANOVA
+comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
+                                 Vardat=map_test, #calling the metadata
+                                 adjusted=TRUE, #true if covariates are to be included for adjustment
+                                 repeated=FALSE, #repeated measure
+                                 main.var="Condition", #main variable or fator
+                                 adj.formula= "Coral", #other factors to include
+                                 repeat.var=FALSE, #repeated measure
+                                 long = FALSE, #longitudinal study
+                                 multcorr=2,
+                                 sig=0.05, #significance level
+                                 prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
+
+res3 <- comparison_test_treat$W.taxa #taxa that sifnificantly vary across factor level of interest
+write.table(res3,"ANCOM_family_ANOVA.txt",sep="\t",col.names=NA)
+res4 <- res[which(res3$detected_0.7==TRUE),] 
+
+sig_sites <- glue::glue_collapse(droplevels(factor(res4$otu.names)), sep = ", ") #this is to get a list of the families that are different
+print(sig_sites)
+#Flavobacteriaceae, Burkholderiaceae, JGI_0000069.P22, Rhodobacteraceae, Rubritaleaceae, Rhizobiaceae, Halieaceae, Cyclobacteriaceae, 
+#Gammaproteobacteria, Pirellulaceae, Saprospiraceae, Sandaracinaceae,, Amoebophilaceae, Cryomorphaceae, Vibrionaceae, Marinilabiliaceae, 
+#Phycisphaeraceae, Thiohalorhabdaceae, Desulfobulbaceae
+
+#Calculate relative abundance
+datc_relabund <-  sweep(datc[,4:596], 1, rowSums(datc[,4:596]), '/')
+datc_relnames <- cbind(datc[,1:3],datc_relabund)
+
+#only selet the significant families
+sig_dis <- select(datc_relnames, Sample, Coral, Condition, Flavobacteriaceae, Burkholderiaceae, "JGI_0000069-P22", Rhodobacteraceae, Rubritaleaceae, Rhizobiaceae, Halieaceae, Cyclobacteriaceae, Gammaproteobacteria, Pirellulaceae, Saprospiraceae, Sandaracinaceae, Amoebophilaceae, Cryomorphaceae, Vibrionaceae, Marinilabiliaceae, Phycisphaeraceae, Thiohalorhabdaceae, Desulfobulbaceae)
+sig_long <- melt(sig_dis, id.vars=c("Sample","Coral","Condition"),variable.name="Family",value.name="Proportion")
+
+sum_sig <- Rmisc::summarySE(sig_long, measurevar = "Proportion", groupvars = c("Condition","Family"), na.rm=TRUE)
+
+cols<-c("DD"="#D55E00","DH"="#999999","H"="#000000")
+pdf("Figure6_DiseaseEnrichedFamilies.pdf",width=8.5)
+fams <- ggplot(sum_sig, aes(x=Family, y=Proportion))+
+  geom_point(size=4,aes(color=Condition))+
+  scale_colour_manual(values=cols)+
+  coord_flip()+
+  theme_bw()+
+  theme(axis.text.x=element_text(size=14))+
+  theme(axis.text.y=element_text(size=14))+
+  theme(axis.title.x=element_text(size=14))+
+  theme(axis.title.y=element_text(size=14))+
+  theme(legend.justification=c(1,1), legend.position=c(1,1))+
+  geom_errorbar(aes(ymin=Proportion-se, ymax=Proportion+se), width=.1)+
+  theme(legend.title = element_text(size=12))+
+  theme(legend.text = element_text(size=12))
+fams
+dev.off()
+
+                                                                 
 ###### Figures S1, S2, S3 - Bar charts with one coral species at a time, finer resolution than Class
 get_taxa_unique(ps_ra_mcav, "Genus") #279
 # get rid of ASVs with no counts in mcav
