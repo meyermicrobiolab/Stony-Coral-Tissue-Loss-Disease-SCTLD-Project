@@ -576,61 +576,67 @@ asv3<-otu_long[grepl("Planktotalea", otu_long$ASV),]
 asv4<-otu_long[grepl("Algicola", otu_long$ASV),]
 asv5<-otu_long[grepl("Vibrio", otu_long$ASV),]
 
+cols<-c("lesion"="#D55E00", "non-lesion"="#999999")
 p1<-ggplot(asv1, aes(x=Source,y=Proportion))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
+  scale_fill_manual(values=cols)+
   ylab("Relative Abundance")+
   ggtitle("Cryomorphaceae")
 
 p2<-ggplot(asv2, aes(x=Source,y=Proportion))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
+  scale_fill_manual(values=cols)+
   ylab("Relative Abundance")+
   ggtitle("Fusibacter")+
   theme(plot.title = element_text(face="italic"))
 
 p3<-ggplot(asv3, aes(x=Source,y=Proportion))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
+  scale_fill_manual(values=cols)+
   ylab("Relative Abundance")+
   ggtitle("Planktotalea")+
   theme(plot.title = element_text(face="italic"))
 
 p4<-ggplot(asv4, aes(x=Source,y=Proportion))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
+  scale_fill_manual(values=cols)+
   ylab("Relative Abundance")+
   ggtitle("Algicola")+
   theme(plot.title = element_text(face="italic"))
   
 p5<-ggplot(asv5, aes(x=Source,y=Proportion))+
   geom_boxplot()+
-  geom_jitter(position=position_jitter(width=.1, height=0),aes(color=Source),size=3)+
+  geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
   theme(legend.title=element_blank())+
   theme(text=element_text(size=14))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
+  scale_fill_manual(values=cols)+
   ylab("Relative Abundance")+
   ggtitle("Vibrio")+
   theme(plot.title = element_text(face="italic"))
