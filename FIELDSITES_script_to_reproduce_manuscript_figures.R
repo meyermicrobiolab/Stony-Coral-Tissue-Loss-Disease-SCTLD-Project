@@ -873,10 +873,8 @@ dat <- tax_glom(ps, taxrank = "Family") #at the Family level
 #melt the data, so it's like a dataframe
 datm <- psmelt(dat)
 
-
 #Cast the new datatable with columns that are of interest
-datc <- data.table::dcast(datm, Sample + Coral + Condition ~ Family, value.var = 'Abundance', fun.aggregate = sum)
-
+datc <- data.table::dcast(datm, Sample + Coral + Near_Far ~ Family, value.var = 'Abundance', fun.aggregate = sum)
 
 dim(datc) #dimensions of the table
 
@@ -893,7 +891,7 @@ metadat <- tibble::rownames_to_column(metadat, "Sample.ID") #make sure the sampl
 names(otud) <- make.names(names(otud)) #get the names from the table for 
 otu_test <- otud #rename otud to otu_test, for syntax in ANCOM
 
-metadat <- select(metadat, c("Sample.ID","Coral","Condition")) # use select to only use treatment columns of interest
+metadat <- select(metadat, c("Sample.ID","Coral","Near_Far")) # use select to only use treatment columns of interest
 map_test <- metadat #rename map_TEst
 Vardat <- map_test #specify that this for Vardat - ANCOM syntax
 #### ANCOM test - not adjusted, more than 2 levels = Kruskal Wallis
@@ -901,7 +899,7 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  Vardat=map_test, #calling the metadata
                                  adjusted=FALSE, #true if covariates are to be included for adjustment
                                  repeated=FALSE, #repeated measure
-                                 main.var="Condition", #main variable or fator
+                                 main.var="Near_Far", #main variable or fator
                                  adj.formula= NULL, #other factors to include
                                  repeat.var=FALSE, #repeated measure
                                  long = FALSE, #longitudinal study
@@ -910,7 +908,7 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
 
 res <- comparison_test_treat$W.taxa #taxa that significantly vary across factor level of interest
-write.table(res,"ANCOM_family_KruskallWallis.txt",sep="\t",col.names=NA)
+write.table(res,"ANCOM_family_KruskallWallis_Near_Far.txt",sep="\t",col.names=NA)
 res2 <- res[which(res$detected_0.7==TRUE),] 
 
 #### ANCOM test - Adjusted by Coral species, ANOVA
@@ -918,7 +916,7 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  Vardat=map_test, #calling the metadata
                                  adjusted=TRUE, #true if covariates are to be included for adjustment
                                  repeated=FALSE, #repeated measure
-                                 main.var="Condition", #main variable or fator
+                                 main.var="Near_Far", #main variable or fator
                                  adj.formula= "Coral", #other factors to include
                                  repeat.var=FALSE, #repeated measure
                                  long = FALSE, #longitudinal study
@@ -927,29 +925,28 @@ comparison_test_treat=ANCOM.main(OTUdat=otu_test, #calling the OTU table
                                  prev.cut=0.90) #OTUs with proportion of zeroes greater than prev.cut are not included in the analysis
 
 res3 <- comparison_test_treat$W.taxa #taxa that significantly vary across factor level of interest
-write.table(res3,"ANCOM_family_ANOVA.txt",sep="\t",col.names=NA)
+write.table(res3,"ANCOM_family_ANOVA_Near_Far.txt",sep="\t",col.names=NA)
 res4 <- res[which(res3$detected_0.7==TRUE),] 
 
 sig_sites <- glue::glue_collapse(droplevels(factor(res4$otu.names)), sep = ", ") #this is to get a list of the families that are different
 print(sig_sites)
-#Flavobacteriaceae, Burkholderiaceae, JGI_0000069.P22, Rhodobacteraceae, Rubritaleaceae, Rhizobiaceae, Halieaceae, Cyclobacteriaceae, 
-#Gammaproteobacteria, Pirellulaceae, Saprospiraceae, Sandaracinaceae,, Amoebophilaceae, Cryomorphaceae, Vibrionaceae, Marinilabiliaceae, 
-#Phycisphaeraceae, Thiohalorhabdaceae, Desulfobulbaceae
+#Pirellulaceae, Flavobacteriaceae, Burkholderiaceae, Arcobacteraceae, Vibrionaceae, JGI_0000069.P22, Rubritaleaceae, Sandaracinaceae, Rhizobiaceae, Rhodobacteraceae, Marinifilaceae, Desulfobulbaceae, Cyclobacteriaceae, Marinilabiliaceae, Amoebophilaceae, Phycisphaeraceae, Crocinitomicaceae, Cryomorphaceae, Saprospiraceae, Thiohalorhabdaceae, DEV007
 
 #Calculate relative abundance
 datc_relabund <-  sweep(datc[,4:596], 1, rowSums(datc[,4:596]), '/')
 datc_relnames <- cbind(datc[,1:3],datc_relabund)
 
 #only selet the significant families
-sig_dis <- select(datc_relnames, Sample, Coral, Condition, Flavobacteriaceae, Burkholderiaceae, "JGI_0000069-P22", Rhodobacteraceae, Rubritaleaceae, Rhizobiaceae, Halieaceae, Cyclobacteriaceae, Gammaproteobacteria, Pirellulaceae, Saprospiraceae, Sandaracinaceae, Amoebophilaceae, Cryomorphaceae, Vibrionaceae, Marinilabiliaceae, Phycisphaeraceae, Thiohalorhabdaceae, Desulfobulbaceae)
-sig_long <- melt(sig_dis, id.vars=c("Sample","Coral","Condition"),variable.name="Family",value.name="Proportion")
+sig_dis <- select(datc_relnames, Sample, Coral, Near_Far, Pirellulaceae, Flavobacteriaceae, Burkholderiaceae, Arcobacteraceae, Vibrionaceae,"JGI_0000069-P22", Rhodobacteraceae, Rubritaleaceae, Rhizobiaceae, Halieaceae, Cyclobacteriaceae, Gammaproteobacteria, Pirellulaceae, Saprospiraceae, Sandaracinaceae, Amoebophilaceae, Cryomorphaceae, Vibrionaceae, Marinilabiliaceae, Phycisphaeraceae, Thiohalorhabdaceae, Desulfobulbaceae)
+sig_long <- melt(sig_dis, id.vars=c("Sample","Coral","Near_Far"),variable.name="Family",value.name="Proportion")
 
-sum_sig <- Rmisc::summarySE(sig_long, measurevar = "Proportion", groupvars = c("Condition","Family"), na.rm=TRUE)
+sum_sig <- Rmisc::summarySE(sig_long, measurevar = "Proportion", groupvars = c("Near_Far","Family"), na.rm=TRUE)
 
-cols<-c("DD"="#D55E00","DH"="#999999","H"="#000000")
-pdf("Figure6_DiseaseEnrichedFamilies.pdf",width=8.5)
+cols<-c("lesion"="#D55E00","near"="#E69F00","far"="#999999","undiseased"="#000000")
+sum_sig$Near_Far<-factor(sum_sig$Near_Far, levels=c("lesion","near","far","undiseased"))
+pdf("Figure6_DiseaseEnrichedFamilies_NearFar.pdf",width=8.5)
 fams <- ggplot(sum_sig, aes(x=Family, y=Proportion))+
-  geom_point(size=4,aes(color=Condition))+
+  geom_point(size=4,aes(color=Near_Far))+
   scale_colour_manual(values=cols)+
   coord_flip()+
   theme_bw()+
@@ -959,7 +956,7 @@ fams <- ggplot(sum_sig, aes(x=Family, y=Proportion))+
   theme(axis.title.y=element_text(size=14))+
   theme(legend.justification=c(1,1), legend.position=c(1,1))+
   geom_errorbar(aes(ymin=Proportion-se, ymax=Proportion+se), width=.1)+
-  theme(legend.title = element_text(size=12))+
+  theme(legend.title = element_blank())+
   theme(legend.text = element_text(size=12))
 fams
 dev.off()
