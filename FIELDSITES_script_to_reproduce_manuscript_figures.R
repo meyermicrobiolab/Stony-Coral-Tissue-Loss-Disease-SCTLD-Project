@@ -359,8 +359,13 @@ distlm <-lm(distance~Coral*Condition, data=dis.treat)
 summary(distlm)
 anova(distlm)
 
-# plot average dispersion by group, with all points shown
+#run linear model to test significance without Ofav
 dis.treat2<-dis.treat[!grepl("Orbicella faveolata",dis.treat$Coral),]
+distlm2 <-lm(distance~Coral*Condition, data=dis.treat2)
+summary(distlm2)
+anova(distlm2)
+                               
+# plot average dispersion by group, with all points shown                               
 dis.treat2$Coral<-factor(dis.treat2$Coral, levels=c("Montastraea cavernosa","Diploria labyrinthiformis","Dichocoenia stokesii"))
 pdf("Figure4_DistanceToCentroid.pdf",width=8.5,height=11)
 p2<-ggplot(dis.treat2,aes(x=Condition,y=distance))+
