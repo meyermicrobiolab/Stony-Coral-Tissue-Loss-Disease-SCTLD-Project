@@ -221,6 +221,19 @@ summary(d.pcx)
 str(d.pcx)
 screeplot(d.pcx)
 
+## Check correlation between number of reads and PC1:
+reads<-read.table("dada_read_stats_noblanks.txt",sep="\t",header=TRUE, row.names=1)
+numreads<-reads$nonchim                
+PC1<-df_out$PC1                 
+cor(numreads, PC1, method = c("pearson"))
+#[1] -0.5887986
+cor.test(numreads, PC1, method=c("pearson"))
+## Check correlation between log(number of reads) and PC1:
+reads<-log(numreads)   
+cor(reads, PC1, method = c("pearson"))                 
+#[1] -0.4521599    
+cor.test(reads, PC1, method=c("pearson"))                 
+                 
 ######### FIGURE 2
 # replot PCA with ggplot2 (showing samples only)
 df_out <- as.data.frame(d.pcx$x)
