@@ -1056,7 +1056,8 @@ p4=plot_bar(ps_ra_dsto, fill="Family")+
   ggtitle("Dichocoenia stokesii")+
   theme(plot.title = element_text(face="italic"))+
   theme(legend.position="bottom")+
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank())+
+  ylab("Relative Abundance + 0.001")
 p4
 dev.off()
 
