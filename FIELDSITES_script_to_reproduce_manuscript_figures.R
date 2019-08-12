@@ -978,8 +978,9 @@ sum_sig <- Rmisc::summarySE(sig_long, measurevar = "Proportion", groupvars = c("
 
 cols<-c("lesion"="#D55E00","near"="#E69F00","far"="#999999","undiseased"="#000000")
 sum_sig$Near_Far<-factor(sum_sig$Near_Far, levels=c("lesion","near","far","undiseased"))
+
 pdf("Figure6_DiseaseEnrichedFamilies_NearFar.pdf",width=8.5)
-fams <- ggplot(sum_sig, aes(x=Family, y=Proportion))+
+fams <- ggplot(sum_sig, aes(x=Family, y=Proportion+0.001))+
   geom_point(size=4,aes(color=Near_Far))+
   scale_colour_manual(values=cols)+
   coord_flip()+
@@ -989,8 +990,9 @@ fams <- ggplot(sum_sig, aes(x=Family, y=Proportion))+
   theme(axis.title.x=element_text(size=14))+
   theme(axis.title.y=element_text(size=14))+
   theme(legend.justification=c(1,1), legend.position=c(1,1))+
-  geom_errorbar(aes(ymin=Proportion-se, ymax=Proportion+se), width=.1)+
+  geom_errorbar(aes(ymin=Proportion+0.001-se, ymax=Proportion+0.001+se, color=Near_Far), width=.1)+
   theme(legend.title = element_blank())+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),labels = trans_format("log10", math_format(10^.x)))+
   theme(legend.text = element_text(size=12))
 fams
 dev.off()
