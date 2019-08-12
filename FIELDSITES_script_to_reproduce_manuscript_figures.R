@@ -595,7 +595,7 @@ asv4<-otu_long[grepl("Algicola", otu_long$ASV),]
 asv5<-otu_long[grepl("Vibrio", otu_long$ASV),]
 
 cols<-c("lesion"="#D55E00", "non-lesion"="#999999")
-p1<-ggplot(asv1, aes(x=Source,y=Proportion))+
+p1<-ggplot(asv1, aes(x=Source,y=(Proportion+0.0001)))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
@@ -604,10 +604,12 @@ p1<-ggplot(asv1, aes(x=Source,y=Proportion))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
   scale_fill_manual(values=cols)+
-  ylab("Relative Abundance")+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x)))+
+  ylab("RA + 0.0001")+
   ggtitle("Cryomorphaceae")
 
-p2<-ggplot(asv2, aes(x=Source,y=Proportion))+
+p2<-ggplot(asv2, aes(x=Source,y=(Proportion+0.0001)))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
@@ -616,11 +618,13 @@ p2<-ggplot(asv2, aes(x=Source,y=Proportion))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
   scale_fill_manual(values=cols)+
-  ylab("Relative Abundance")+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x)))+
+  ylab("RA + 0.0001")+
   ggtitle("Fusibacter")+
   theme(plot.title = element_text(face="italic"))
 
-p3<-ggplot(asv3, aes(x=Source,y=Proportion))+
+p3<-ggplot(asv3, aes(x=Source,y=(Proportion+0.0001)))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
@@ -629,11 +633,13 @@ p3<-ggplot(asv3, aes(x=Source,y=Proportion))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
   scale_fill_manual(values=cols)+
-  ylab("Relative Abundance")+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x)))+
+  ylab("RA + 0.0001")+
   ggtitle("Planktotalea")+
   theme(plot.title = element_text(face="italic"))
 
-p4<-ggplot(asv4, aes(x=Source,y=Proportion))+
+p4<-ggplot(asv4, aes(x=Source,y=(Proportion+0.0001)))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
@@ -642,11 +648,13 @@ p4<-ggplot(asv4, aes(x=Source,y=Proportion))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
   scale_fill_manual(values=cols)+
-  ylab("Relative Abundance")+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x)))+
+  ylab("RA + 0.0001")+
   ggtitle("Algicola")+
   theme(plot.title = element_text(face="italic"))
   
-p5<-ggplot(asv5, aes(x=Source,y=Proportion))+
+p5<-ggplot(asv5, aes(x=Source,y=(Proportion+0.0001)))+
   geom_boxplot()+
   geom_jitter(position=position_jitter(width=.1, height=0),aes(fill=Source),size=2,shape=21)+
   theme(axis.title.x=element_blank())+
@@ -655,11 +663,13 @@ p5<-ggplot(asv5, aes(x=Source,y=Proportion))+
   facet_grid(.~Coral)+
   theme(strip.text.x=element_text(face="italic",size=10))+
   scale_fill_manual(values=cols)+
-  ylab("Relative Abundance")+
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x)))+
+  ylab("RA + 0.0001")+
   ggtitle("Vibrio")+
   theme(plot.title = element_text(face="italic"))
 
-pdf("Figure5_RelAbund_5ASVs.pdf",width=8.5,height=11)
+pdf("Figure5_RelAbund_5ASVs_log.pdf",width=8.5,height=11)
 plot_grid(p1,p2,p3,p4,p5, labels=c("A","B","C","D","E"), ncol=1, nrow=5)
 dev.off()
 
