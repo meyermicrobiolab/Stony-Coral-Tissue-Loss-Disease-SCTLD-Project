@@ -125,9 +125,9 @@ p5<-ggplot(asv5, aes(x=Source,y=Proportion))+
   ggtitle("Vibrio")+
   theme(plot.title = element_text(face="italic"))
 
-#pdf("Figure5_RelAbund_5ASVs.pdf",width=8.5,height=11)
+pdf("Figure5_RelAbund_5ASVs.pdf",width=8.5,height=11)
 plot_grid(p1,p2,p3,p4,p5, labels=c("A","B","C","D","E"), ncol=1, nrow=5)
-#dev.off()
+dev.off()
 
 ```
 
@@ -200,8 +200,8 @@ p5<-ggplot(asv5, aes(x=Source,y=log(Proportion+0.0001)))+
   ggtitle("Vibrio")+
   theme(plot.title = element_text(face="italic"))
 
-#pdf("Figure5_RelAbund_5ASVs_log.pdf",width=8.5,height=11)
+pdf("Figure5_RelAbund_5ASVs_log.pdf",width=8.5,height=11)
 plot_grid(p1,p2,p3,p4,p5, labels=c("A","B","C","D","E"), ncol=1, nrow=5)
-#dev.off()
+dev.off()
 ```
 
