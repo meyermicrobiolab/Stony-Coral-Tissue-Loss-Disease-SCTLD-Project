@@ -978,7 +978,8 @@ sum_sig <- Rmisc::summarySE(sig_long, measurevar = "Proportion", groupvars = c("
 
 cols<-c("lesion"="#D55E00","near"="#E69F00","far"="#999999","undiseased"="#000000")
 sum_sig$Near_Far<-factor(sum_sig$Near_Far, levels=c("lesion","near","far","undiseased"))
-
+require(scales)
+  
 pdf("Figure6_DiseaseEnrichedFamilies_NearFar.pdf",width=8.5)
 fams <- ggplot(sum_sig, aes(x=Family, y=Proportion+0.001))+
   geom_point(size=4,aes(color=Near_Far))+
